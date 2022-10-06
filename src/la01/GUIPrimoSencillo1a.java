@@ -71,13 +71,15 @@ public class GUIPrimoSencillo1a {
           } else {
             try {
               long numero = Long.parseLong( txfNumero.getText().trim() );
-              System.out.println( "Examinando numero: " + numero );
+              /*System.out.println( "Examinando numero: " + numero );
               boolean primo = esPrimo( numero );
               if( primo ) {
                 System.out.println( "El numero " + numero + " SI es primo." );
               } else {
                 System.out.println( "El numero " + numero + " NO es primo." );
-              }
+              }*/
+              MiHebraGUI primo = new MiHebraGUI(numero);
+              primo.start();
             } catch( NumberFormatException ex ) {
               txfMensajes.setText( "No es un numero correcto." );
             }
@@ -130,5 +132,24 @@ public class GUIPrimoSencillo1a {
       }
     }
     return( primo );
+  }
+}
+
+class MiHebraGUI extends Thread {
+  long num;
+
+  public MiHebraGUI(long num) {
+    this.num = num;
+  }
+
+  @Override
+  public void run() {
+    System.out.println( "Examinando numero: " + num );
+    boolean primo = GUIPrimoSencillo1a.esPrimo(num);
+    if( primo ) {
+      System.out.println( "El numero " + num + " SI es primo." );
+    } else {
+      System.out.println( "El numero " + num + " NO es primo." );
+    }
   }
 }
