@@ -25,9 +25,8 @@ class EjemploCreacionThreadMulti {
         MiHebra v[] = new MiHebra[numHebras];
         // Crear y arrancar las hebras y almacenarlas en v
         for (int i = 0; i < numHebras; i++) {
-            MiHebra t = new MiHebra(i, 1, 1000000);
-            v[i] = t;
-            t.start();
+            v[i] = new MiHebra(i, 1, 1000000);
+            v[i].start();
         }
         // Esperar a que terminen todas las hebras almacenadas en v
         try {
