@@ -1,5 +1,9 @@
 package la03;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static java.lang.Math.min;
+
 // ===========================================================================
 public class EjemploMuestraPrimosEnVector {
 // ===========================================================================
@@ -51,7 +55,7 @@ public class EjemploMuestraPrimosEnVector {
     t2 = System.nanoTime();
     ts = ( ( double ) ( t2 - t1 ) ) / 1.0e9;
     System.out.println( "Tiempo secuencial (seg.):                    " + ts );
-/*
+
     //
     // Implementacion paralela ciclica.
     //
@@ -59,20 +63,71 @@ public class EjemploMuestraPrimosEnVector {
     System.out.println( "Implementacion paralela ciclica." );
     t1 = System.nanoTime();
     // Gestion de hebras para la implementacion paralela ciclica
-    // ....
+    MiHebraPrimoDistCiclica[] vectorHebras = new MiHebraPrimoDistCiclica[numHebras];
+    for(int i = 0; i < numHebras; i++) {
+      vectorHebras[i] = new MiHebraPrimoDistCiclica(i, numHebras, vectorNumeros);
+      vectorHebras[i].start();
+    }
+    try {
+      for(int i = 0; i < numHebras; i++) {
+        vectorHebras[i].join();
+      }
+    } catch (InterruptedException ex) {
+      ex.printStackTrace();
+    }
     t2 = System.nanoTime();
     tc = ( ( double ) ( t2 - t1 ) ) / 1.0e9;
     System.out.println( "Tiempo paralela ciclica (seg.):              " + tc );
-    System.out.println( "Incremento paralela ciclica:                 " + ... );
+    System.out.println( "Incremento paralela ciclica:                 " + ts/tc );
     //
     // Implementacion paralela por bloques.
     //
-    // ....
+    System.out.println( "" );
+    System.out.println( "Implementacion paralela por bloques." );
+    t1 = System.nanoTime();
+    // Gestion de hebras para la implementacion paralela por bloques
+    MiHebraPrimoDistPorBloques[] vectorHebrasB = new MiHebraPrimoDistPorBloques[numHebras];
+    for(int i = 0; i < numHebras; i++) {
+      vectorHebrasB[i] = new MiHebraPrimoDistPorBloques(i, numHebras, vectorNumeros);
+      vectorHebrasB[i].start();
+    }
+    try {
+      for(int i = 0; i < numHebras; i++) {
+        vectorHebrasB[i].join();
+      }
+    } catch (InterruptedException ex) {
+      ex.printStackTrace();
+    }
+    t2 = System.nanoTime();
+    tb = ( ( double ) ( t2 - t1 ) ) / 1.0e9;
+    System.out.println( "Tiempo paralela por bloques (seg.):              " + tb );
+    System.out.println( "Incremento paralela por bloques:                 " + ts/tb );
     //
     // Implementacion paralela dinamica.
     //
-    // ....
-*/
+    System.out.println( "" );
+    System.out.println( "Implementacion paralela dinamica." );
+    t1 = System.nanoTime();
+    // Gestion de hebras para la implementacion paralela dinamica
+    MiHebraPrimoDistDinamica[] vectorHebrasD = new MiHebraPrimoDistDinamica[numHebras];
+    AtomicInteger puntero = new AtomicInteger(0);
+    for(int i = 0; i < numHebras; i++) {
+      vectorHebrasD[i] = new MiHebraPrimoDistDinamica(i, numHebras, vectorNumeros, puntero);
+      vectorHebrasD[i].start();
+    }
+    try {
+      for(int i = 0; i < numHebras; i++) {
+        vectorHebrasD[i].join();
+      }
+    } catch (InterruptedException ex) {
+      ex.printStackTrace();
+    }
+    t2 = System.nanoTime();
+    td = ( ( double ) ( t2 - t1 ) ) / 1.0e9;
+    System.out.println( "Tiempo paralela dinamica (seg.):              " + td );
+    System.out.println( "Incremento paralela dinamica:                 " + ts/td );
+    //
+
   }
 
   // -------------------------------------------------------------------------
@@ -140,6 +195,72 @@ class VectorNumeros {
       200000201L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L,
       200000209L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L, 4L 
       };
+    }
+  }
+}
+
+class MiHebraPrimoDistCiclica extends Thread {
+  int miId, numHebras;
+  long[] vector;
+
+  public MiHebraPrimoDistCiclica(int miId, int numHebras, long[] vector) {
+    this.miId = miId;
+    this.numHebras = numHebras;
+    this.vector = vector;
+  }
+
+  @Override
+  public void run() {
+    for( int i = miId; i < vector.length; i += numHebras) {
+      if( EjemploMuestraPrimosEnVector.esPrimo( vector[ i ] ) ) {
+        System.out.println( "  Encontrado primo: " + vector[ i ] );
+      }
+    }
+  }
+}
+
+class MiHebraPrimoDistPorBloques extends Thread {
+  int miId, numHebras;
+  long[] vector;
+
+  public MiHebraPrimoDistPorBloques(int miId, int numHebras, long[] vector) {
+    this.miId = miId;
+    this.numHebras = numHebras;
+    this.vector = vector;
+  }
+
+  @Override
+  public void run() {
+    int tamBloque = (vector.length + numHebras - 1) / numHebras;
+    int inicio = miId * tamBloque;
+    int fin = min(miId + tamBloque, vector.length);
+    for( int i = inicio; i < fin; i++) {
+      if( EjemploMuestraPrimosEnVector.esPrimo( vector[ i ] ) ) {
+        System.out.println( "  Encontrado primo: " + vector[ i ] );
+      }
+    }
+  }
+}
+
+class MiHebraPrimoDistDinamica extends Thread {
+  int miId, numHebras;
+  long[] vector;
+  AtomicInteger puntero;
+
+  public MiHebraPrimoDistDinamica(int miId, int numHebras, long[] vector, AtomicInteger puntero) {
+    this.miId = miId;
+    this.numHebras = numHebras;
+    this.vector = vector;
+    this.puntero = puntero;
+  }
+
+  @Override
+  public void run() {
+    while(puntero.get() < vector.length) {
+      int posicion = puntero.getAndIncrement();
+      if( EjemploMuestraPrimosEnVector.esPrimo( vector[ posicion ] ) ) {
+        System.out.println( "  Encontrado primo: " + vector[ posicion ] );
+      }
     }
   }
 }
