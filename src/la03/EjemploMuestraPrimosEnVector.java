@@ -256,11 +256,12 @@ class MiHebraPrimoDistDinamica extends Thread {
 
   @Override
   public void run() {
-    while(puntero.get() < vector.length) {
-      int posicion = puntero.getAndIncrement();
+    int posicion = puntero.getAndIncrement();
+    while(posicion < vector.length) {
       if( EjemploMuestraPrimosEnVector.esPrimo( vector[ posicion ] ) ) {
         System.out.println( "  Encontrado primo: " + vector[ posicion ] );
       }
+      posicion = puntero.getAndIncrement();
     }
   }
 }

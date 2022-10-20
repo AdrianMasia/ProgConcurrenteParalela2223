@@ -3,7 +3,7 @@ package la03;
 // ============================================================================
 class SincroCuentaIncrementos {
 // ============================================================================
-  volatile int numIncrementos = 0;
+  int numIncrementos = 0;
 
   // --------------------------------------------------------------------------
   synchronized void incrementaNumIncrementos() {
