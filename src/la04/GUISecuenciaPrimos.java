@@ -11,16 +11,16 @@ import javax.swing.event.*;
 // ===========================================================================
 class ZonaIntercambio {
 // ===========================================================================
-  AtomicLong tiempo = new AtomicLong(500);
+  volatile long tiempo = 500;
 
   // -------------------------------------------------------------------------
   void setTiempo( long tiempoMilisegundos ) {
-    tiempo.set(tiempoMilisegundos);
+    tiempo = tiempoMilisegundos;
   }
 
   // -------------------------------------------------------------------------
   long getTiempo( ) {
-    return tiempo.get();
+    return tiempo;
   }
 }
 
@@ -152,12 +152,13 @@ class HebraCalculadora extends Thread {
   AtomicBoolean fin = new AtomicBoolean();
   JTextField txfMensajes;
   ZonaIntercambio z;
-  AtomicLong tiempo = new AtomicLong();
+  long tiempo;
 
   public HebraCalculadora(JTextField txfMensajes, ZonaIntercambio z) {
     this.fin.set(false);
     this.txfMensajes = txfMensajes;
     this.z = z;
+    this.tiempo = z.getTiempo();
   }
 
   public void fin() {
@@ -170,9 +171,9 @@ class HebraCalculadora extends Thread {
     while (!fin.get()) {
       if(GUISecuenciaPrimos.esPrimo(i)) {
         long primo = i;
-        tiempo.set(z.getTiempo());
+        tiempo = z.getTiempo();
         try {
-          sleep(tiempo.get());
+          sleep(tiempo);
         } catch (InterruptedException e) {
           throw new RuntimeException(e);
         }
