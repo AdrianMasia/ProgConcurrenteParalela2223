@@ -519,16 +519,23 @@ class Proyectil {
     // distinta de la anterior.
     if( ( this.intPosX != this.intPosXOld )||
        ( this.intPosY != this.intPosYOld ) ) {
-/*
+
       final int finalIntPosX  = this.intPosX;
       final int finalIntPosY  = this.intPosY;
       final int finalIntPosXOld = this.intPosXOld;
       final int finalIntPosYOld = this.intPosYOld;
-      cnvCampoTiro.dibujaProyectil( finalIntPosX, finalIntPosY,
-                     finalIntPosXOld, finalIntPosYOld );
-*/
+      SwingUtilities.invokeLater(new Runnable() {
+        @Override
+        public void run() {
+          cnvCampoTiro.dibujaProyectil( finalIntPosX, finalIntPosY,
+                  finalIntPosXOld, finalIntPosYOld );
+        }
+      });
+
+/*
       cnvCampoTiro.dibujaProyectil( intPosX, intPosY,
                        intPosXOld, intPosYOld );
+ */
     }
   }
 }
@@ -552,6 +559,12 @@ class MiHebraCalculadoraUnDisparo extends Thread {
   @Override
   public void run() {
     Proyectil proyectil;
+    SwingUtilities.invokeLater(new Runnable() {
+      @Override
+      public void run() {
+        txtMensajes.setText("Calculando y dibujando trayectoria...");
+      }
+    });
     while (true) {
       // Bucle para coger todos los nuevos disparos dejados por la hebra grafica
       while(!listaD.isEmpty() || listaP.isEmpty()) {
@@ -566,53 +579,50 @@ class MiHebraCalculadoraUnDisparo extends Thread {
       }
       // Procesado de la lista local de proyectiles
       long millis = 1L;
+
       for (int i = 0; i < listaP.size(); i++) {
         proyectil = listaP.get(i);
-        txtMensajes.setText("Calculando y dibujando trayectoria...");
         boolean impactado = false;
+        // Muestra en pantalla los datos del proyectil p.
+        proyectil.imprimeEstadoProyectilEnConsola();
+        // Mueve el proyectil p.
+        proyectil.mueveUnIncremental();
+        // Dibuja el proyectil p.
+        proyectil.actualizaDibujoDeProyectil();
+        // Comprueba si el proyectil p ha impactado o continua en vuelo.
+        if ((proyectil.intPosX == objetivo.x) && (proyectil.intPosY == objetivo.y)) {
+          // El proyectil ha acertado el objetivo.
+          impactado = true;
+          SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+              String mensaje = " Destruido!!!";
+              txtMensajes.setText(mensaje);
+            }
+          });
+        } else if ((proyectil.intPosY <= 0) && (proyectil.velY < 0.0)) {
+          // El proyectil ha impactado contra el suelo, pero no ha acertado.
+          impactado = true;
+          final int posX = proyectil.intPosX;
+          SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+              String mensaje = "Has fallado. Esta en " + objetivo.x + ". " +
+                      "Has disparado a " + posX + ".";
+              txtMensajes.setText(mensaje);
+            }
+          });
+        } //else {    // Si no pasa nada, el proyectil continua en vuelo. Ya se muestra como false.
 
-        while (!impactado) {
-          // Muestra en pantalla los datos del proyectil p.
-          proyectil.imprimeEstadoProyectilEnConsola();
-          // Mueve el proyectil p.
-          proyectil.mueveUnIncremental();
-          // Dibuja el proyectil p.
-          proyectil.actualizaDibujoDeProyectil();
-          // Comprueba si el proyectil p ha impactado o continua en vuelo.
-          if ((proyectil.intPosX == objetivo.x) && (proyectil.intPosY == objetivo.y)) {
-            // El proyectil ha acertado el objetivo.
-            impactado = true;
-            SwingUtilities.invokeLater(new Runnable() {
-              @Override
-              public void run() {
-                String mensaje = " Destruido!!!";
-                txtMensajes.setText(mensaje);
-              }
-            });
-
-          } else if ((proyectil.intPosY <= 0) && (proyectil.velY < 0.0)) {
-            // El proyectil ha impactado contra el suelo, pero no ha acertado.
-            impactado = true;
-            final int posX = proyectil.intPosX;
-            SwingUtilities.invokeLater(new Runnable() {
-              @Override
-              public void run() {
-                String mensaje = "Has fallado. Esta en " + objetivo.x + ". " +
-                        "Has disparado a " + posX + ".";
-                txtMensajes.setText(mensaje);
-              }
-            });
-          }
-          // Si no pasa nada, el proyectil continua en vuelo. Ya se muestra como false.
-          // Si ha impactado, se tiene que borrar de listaP.
-          if(impactado) {
-          listaP.remove(proyectil);
-          }
-          try {
-            Thread.sleep(millis);
-          } catch (InterruptedException ex) {
-            ex.printStackTrace();
-          }
+       // }
+        // Si ha impactado, se tiene que borrar de listaP.
+        if(impactado) {
+        listaP.remove(proyectil);
+        }
+        try {
+          Thread.sleep(millis);
+        } catch (InterruptedException ex) {
+          ex.printStackTrace();
         }
       }
     }
