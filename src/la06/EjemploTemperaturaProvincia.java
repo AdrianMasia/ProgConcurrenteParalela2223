@@ -286,11 +286,17 @@ class EjemploTemperaturaProvincia {
           }
           // Se define el tipo de espera y se tratan los objetos Future
           exec.shutdown();
+          PuebloMaximaMinima MaxMinFuture;
           try {
             for (int i = 0; i < arrayFuture.size(); i++) {
               future = arrayFuture.get(i);
-              MaxMin = future.get();
-              MaxMin.dameCodigo();
+              MaxMinFuture = future.get();
+              if( ( MaxMinFuture.dameTemperaturaMaxima() -
+                      MaxMinFuture.dameTemperaturaMinima() ) > ( MaxMin.dameTemperaturaMaxima() -
+                      MaxMin.dameTemperaturaMinima() ) ) {
+                MaxMin.actualizaMaxMin(MaxMinFuture.damePueblo(), MaxMinFuture.dameCodigo(),
+                        MaxMin.dameTemperaturaMaxima(), MaxMinFuture.dameTemperaturaMinima());
+              }
             }
           } catch(ExecutionException | InterruptedException ex ){
             ex.printStackTrace();
