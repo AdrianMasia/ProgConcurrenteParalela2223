@@ -1,10 +1,9 @@
-package la06;
+//package la06;
 
 import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 class EjemploTemperaturaProvincia {
   public static void main(String[] args) {
@@ -281,7 +280,7 @@ class EjemploTemperaturaProvincia {
           // Se encolan las tareas y se asignan a su objeto Future
           while ((linea = br.readLine()) != null) {
             int codPueblo = Integer.parseInt(linea);
-            future = exec.submit(new HebraThreadPoolCallable(fecha, codPueblo));
+            future = exec.submit(new HebraThreadPoolCallable(fecha, codPueblo, MaxMin));
             arrayFuture.add(future);
           }
           // Se define el tipo de espera y se tratan los objetos Future
@@ -291,16 +290,12 @@ class EjemploTemperaturaProvincia {
             for (int i = 0; i < arrayFuture.size(); i++) {
               future = arrayFuture.get(i);
               MaxMinFuture = future.get();
-              MaxMin.actualizaMaxMin(MaxMinFuture.nombrePueblo(), MaxMinFuture.dameCodigo(),
-                      MaxMinFuture.dameTemperaturaMaxima(), MaxMinFuture.dameTemperaturaMinima());
-              /*
               if( ( MaxMinFuture.dameTemperaturaMaxima() -
                       MaxMinFuture.dameTemperaturaMinima() ) > ( MaxMin.dameTemperaturaMaxima() -
                       MaxMin.dameTemperaturaMinima() ) ) {
-                MaxMin.actualizaMaxMin(MaxMinFuture.nombrePueblo(), MaxMinFuture.dameCodigo(),
+                MaxMin.actualizaMaxMin(MaxMinFuture.damePueblo(), MaxMinFuture.dameCodigo(),
                         MaxMin.dameTemperaturaMaxima(), MaxMinFuture.dameTemperaturaMinima());
               }
-               */
             }
           } catch(ExecutionException | InterruptedException ex ){
             ex.printStackTrace();
@@ -480,11 +475,6 @@ class PuebloMaximaMinima {
   public synchronized int dameTemperaturaMinima() {
     return this.min;
   }
-
-  // --------------------------------------------------------------------------
-  public synchronized String nombrePueblo() {
-    return this.poblacion;
-  }
 }
 
 class TareaEnColaGestionPropia {
@@ -506,6 +496,8 @@ class TareaEnColaGestionPropia {
 }
 
 class HebraGestionPropia extends Thread {
+  int codPueblo;
+  boolean esVeneno;
   LinkedBlockingQueue<TareaEnColaGestionPropia> lbq;
   String fecha;
   PuebloMaximaMinima MaxMin;
@@ -521,14 +513,14 @@ class HebraGestionPropia extends Thread {
   public void run() {
     try {
       TareaEnColaGestionPropia tarea = lbq.take();
-      boolean esVeneno = tarea.isEsVeneno();
-      int codPueblo = tarea.getCodPueblo();
+      this.esVeneno = tarea.isEsVeneno();
+      this.codPueblo = tarea.getCodPueblo();
       do {
         if( !esVeneno ) {
           EjemploTemperaturaProvincia.ProcesaPueblo(fecha, codPueblo, MaxMin, false);
           tarea = lbq.take();
-          esVeneno = tarea.isEsVeneno();
-          codPueblo = tarea.getCodPueblo();
+          this.esVeneno = tarea.isEsVeneno();
+          this.codPueblo = tarea.getCodPueblo();
         }
       } while(!esVeneno);
     } catch (InterruptedException e) {
@@ -557,16 +549,16 @@ class HebraThreadPool implements Runnable {
 class HebraThreadPoolCallable implements Callable<PuebloMaximaMinima> {
   int codPueblo;
   String fecha;
+  PuebloMaximaMinima MaxMin;
 
-
-  public HebraThreadPoolCallable( String fecha, int codPueblo) {
+  public HebraThreadPoolCallable( String fecha, int codPueblo, PuebloMaximaMinima MaxMin) {
     this.fecha = fecha;
     this.codPueblo = codPueblo;
+    this.MaxMin = MaxMin;
   }
 
   @Override
   public PuebloMaximaMinima call() {
-    PuebloMaximaMinima MaxMin = new PuebloMaximaMinima();
     EjemploTemperaturaProvincia.ProcesaPueblo(fecha, codPueblo, MaxMin, false);
     return MaxMin;
   }
