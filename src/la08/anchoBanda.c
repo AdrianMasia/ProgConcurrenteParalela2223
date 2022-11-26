@@ -31,7 +31,6 @@ int main( int argc, char * argv[] ) {
   // Imprime el nombre de los procesadores.
   MPI_Get_processor_name( miNombreProc, & longNombreProc );
   printf( "Proceso %d  Se ejecuta en: %s\n", miId, miNombreProc );
-  MPI_Barrier( MPI_COMM_WORLD );
 
   // El proceso 0 inicializa las cinco variables.
   if( miId == 0 ) {
@@ -58,13 +57,6 @@ int main( int argc, char * argv[] ) {
 
   // Difusion del vector vecArgs con operaciones punto a punto.
   // ... (A)
-  if( miId == 0 ) {
-  	for( i = 1; i < numProcs; i++ ) {
-  		MPI_Send( vecArgs, 5, MPI_INT, i, 88, MPI_COMM_WORLD );
-  	}
-  } else {
-  	MPI_Recv( vecArgs, 5, MPI_INT, 0, 88, MPI_COMM_WORLD, &s );
-  }
   
   // El resto de procesos inicializan las cinco variables con la 
   // informacion del vector. El proceso 0 no tiene que hacerlo porque
@@ -86,7 +78,6 @@ int main( int argc, char * argv[] ) {
     return( -1 );
   }
 
-    MPI_Barrier(MPI_COMM_WORLD);
   // Imprime los parametros de trabajo.
   if( miId == 0 ) {
     printf( "  Numero de procesos:  %5d\n", numProcs );
@@ -129,29 +120,11 @@ int main( int argc, char * argv[] ) {
     MPI_Barrier( MPI_COMM_WORLD );
 
     // Bucle de envio/recepcion de "numMensajes" de tamanyo "tam" y toma de tiempos.
-    /// ... (B)
-    int mensaje;
-    if( miId == 0 ) {
-        t1 = MPI_Wtime();
-    	for( i = 0; i < numMensajes; i++ ) {
-    		MPI_Send( &mensaje, tam, MPI_INT, 1, 88, MPI_COMM_WORLD );
-    	}
-    	MPI_Recv( &mensaje, 0, MPI_INT, 1, 88, MPI_COMM_WORLD, &s );
-    	t2 = MPI_Wtime();
-    } else if( miId == 1 ) {
-    	for( i = 0; i < numMensajes; i++ ) {
-    		MPI_Recv( &mensaje, tam, MPI_INT, 0, 88, MPI_COMM_WORLD, &s );
-    	}
-    	MPI_Send( &mensaje, 0, MPI_INT, 0, 88, MPI_COMM_WORLD );
-    }
+    // ... (B)
 
     // Calculo de prestaciones: tiempoTotal, tiempoPorMensajeEnMicroseg,
     // anchoDeBandaEnMbs.
     // ... (C)
-    tiempoTotal = (double) (t2 - t1);
-    tiempoPorMensajeEnMicroseg = (tiempoTotal / numMensajes) * 1.0e6;
-    anchoDeBandaEnMbs = (1 / tiempoPorMensajeEnMicroseg);
-    MPI_Barrier( MPI_COMM_WORLD );
 
     // Escritura de resultados.
     if ( miId == 0 ) {
